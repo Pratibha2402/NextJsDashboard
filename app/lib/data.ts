@@ -119,7 +119,7 @@ export async function fetchFilteredInvoices(
     return await executeQuery<InvoicesTable>(
       `SELECT
          invoices.id AS "id",
-         invoices.customer_id A S "customer_id",
+         invoices.customer_id AS "customer_id",
          invoices.amount AS "amount",
          TO_CHAR(invoices.date_created, 'YYYY-MM-DD') AS "date",
          invoices.status AS "status",
