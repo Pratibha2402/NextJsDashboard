@@ -1,15 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { authenticateWithAD } from "./ldap";
+import { authenticateWithAD } from "@/app/lib/ldap";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET,
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/Login",
-  },
+export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       name: "Active Directory",
@@ -18,34 +11,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const username = credentials?.username;
-        const password = credentials?.password;
-
-        if (typeof username !== "string" || typeof password !== "string") {
-          console.error("[AUTH] Missing username or password in credentials provider");
+        if (!credentials?.username || !credentials?.password) {
           return null;
         }
 
         try {
-          console.info("[AUTH] Starting AD login", {
-            username: username.trim(),
-          });
-
-          const user = await authenticateWithAD(username, password);
+          const user = await authenticateWithAD(
+            credentials.username as string,
+            credentials.password as string,
+          );
 
           return {
-            id: user.id,
+            id: user.username,
             name: user.name,
-            email: `${user.username}@${process.env.AD_DOMAIN?.toLowerCase() ?? "ioc"}`,
+            email: `${user.username}@ioc.local`,
           };
-        } catch (error) {
-          console.error("[AUTH] AD authentication failed", {
-            username: username.trim(),
-            error,
-          });
+        } catch {
           return null;
         }
       },
     }),
   ],
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/Login",
+  },
 });
